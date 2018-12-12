@@ -1,0 +1,31 @@
+ALTER PROCEDURE GL_GWYPerson_SETRKeyID(@SETChild VARCHAR(100), @OperID VARCHAR(100), @JobID VARCHAR(36), @JobDataID INT)
+AS
+BEGIN
+	/*
+	* 生成指定信息子集的 子集 + RKeyID；比如A30RKeyID, A29RKeyID
+	* 用于354公务员项目
+	* 作者： 胡文鸿
+	*/
+	DECLARE
+		@CHILD VARCHAR(10) = ''
+		, @SQL VARCHAR(2000) = ''
+	
+	DECLARE
+		CURSOR_SETCHILD CURSOR
+	    FOR (SELECT ch FROM dbo.Get_StringSplit(@SETChild, ','))
+	OPEN CURSOR_SETCHILD; --打开游标
+	FETCH NEXT FROM CURSOR_SETCHILD INTO @CHILD ;
+	WHILE @@FETCH_STATUS = 0
+	BEGIN
+		
+		SET @SQl = 'UPDATE WF_D_' + @OperID + '_'+@CHILD+' SET '+@CHILD+'RKeyID = Replace(Newid(),''-'','''') WHERE KeyID IN (
+SELECT KeyID FROM WF_D_' + @OperID + '_Main WHERE JobID = '''+@JobID+''' AND JobDataID = '+convert(varchar(2), @JobDataID)+') AND '+@CHILD+'RKeyID IS NULL'
+		EXEC(@SQL)
+		--PRINT @SQL
+	    FETCH NEXT FROM CURSOR_SETCHILD INTO @CHILD;
+	END
+	CLOSE CURSOR_SETCHILD;
+	DEALLOCATE CURSOR_SETCHILD;
+END
+GO
+
