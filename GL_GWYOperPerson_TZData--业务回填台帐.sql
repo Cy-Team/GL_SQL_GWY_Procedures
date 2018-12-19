@@ -28,7 +28,7 @@ BEGIN
 			WHERE JobID = '''+ @JobID +''' AND JobDataID = '+ convert(VARCHAR(4), @JobDataID) +')'
 		
 		EXEC(@SQL)
-		PRINT @SQL
+		--PRINT @SQL
 		
 		-- ²åÈë
 		SET @SQl = '
@@ -95,11 +95,11 @@ BEGIN
 		
 		IF @CHILD = 'W0C'
 		BEGIN
-			SET @SQl = @SQl + ' AND W0CGWYZWZJ02 >= (SELECT A2907 FROM WF_D_'+@OperID+'_A29 WHERE KeyID = _'+@CHILD+'.KeyID AND IsLastRow = 1)'
+			SET @SQl = @SQl + ' AND W0CGWYZWZJ02T >= (SELECT A2907 FROM WF_D_'+@OperID+'_A29 WHERE KeyID = _'+@CHILD+'.KeyID AND IsLastRow = 1)'
 		END
 		
 		EXEC(@SQL)
-		--PRINT @SQL
+		PRINT @SQL
 		
 		SET @SQl = '
 			UPDATE _'+@CHILD+'A
@@ -117,7 +117,7 @@ BEGIN
 				AND _'+@CHILD+'B.'+@CHILD+'B0001 = _'+@CHILD+'A.'+@CHILD+'B0001
 		'
 		EXEC(@SQL)
-		--PRINT @SQL
+		PRINT @SQL
 				
 	    FETCH NEXT FROM CURSOR_SETCHILD INTO @CHILD;
 	END

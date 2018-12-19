@@ -137,7 +137,8 @@ BEGIN
 '+'			    ,replace(newid(), ''-'', '''') AS RKeyID
 '+'			FROM WF_D_'+@OperID+'_GWYInnerChange _change
 '+'			LEFT JOIN WF_D_'+@OperID+'_Main _main ON _change.KeyID = _main.KeyID
-'+'			WHERE _main.JobID = '''+@JobID+''' AND _main.JobDataID = '+ convert(VARCHAR(4), @JobDataID) + '
+'+'			WHERE _main.JobID = '''+@JobID+''' AND _main.JobDataID = '+ convert(VARCHAR(4), @JobDataID) + ' AND GWYInnerChange99 = ''02''
+'+'			AND _main.KeyID IN (SELECT KeyID FROM WF_D_'+@OperID+'_GWYInnerChange WHERE KeyID = _main.KeyID)
 
 '+'		    DELETE FROM WF_D_'+@OperID+'_W03 WHERE KeyID IN (SELECT KeyID FROM WF_D_'+@OperID+'_Main WHERE JobID = '''+@JobID+''' AND JobDataID = '+ convert(VARCHAR(4), @JobDataID) +')
 '+'			AND KeyID IN (SELECT KeyID FROM WF_D_'+@OperID+'_GWYInnerChange)
@@ -161,7 +162,8 @@ BEGIN
 '+'			    ,replace(newid(), ''-'', '''') AS RKeyID
 '+'			FROM WF_D_'+@OperID+'_GWYInnerChange _change
 '+'			LEFT JOIN WF_D_'+@OperID+'_Main _main ON _change.KeyID = _main.KeyID
-'+'			WHERE _main.JobID = '''+@JobID+''' AND _main.JobDataID = '+ convert(VARCHAR(4), @JobDataID) +'
+'+'			WHERE _main.JobID = '''+@JobID+''' AND _main.JobDataID = '+ convert(VARCHAR(4), @JobDataID) + ' AND GWYInnerChange99 = ''01''
+'+'			AND _main.KeyID IN (SELECT KeyID FROM WF_D_'+@OperID+'_GWYInnerChange WHERE KeyID = _main.KeyID)
 '
 			EXEC(@SQL)
 			--PRINT @sql
@@ -191,14 +193,18 @@ BEGIN
 '+'			 	, dbo.FN_CodeItemIDToName(''N'', B0001) C_N_B0001
 '+'			 	, SourceKeyID
 '+'			 	, A15RKeyID
-'+'			 	, W0110G
+'+'			  	, CASE 
+'+'			 		WHEN (SELECT COUNT(1) FROM WF_D_'+@OperID+'_W02 WHERE KeyID = _main.KeyID AND year(W02A3004) > _A15.A1521) > 0 
+'+'			 		THEN (SELECT W02W0110G FROM WF_D_'+@OperID+'_W02 WHERE KeyID = _main.KeyID)
+'+'			 		ELSE W0110G
+'+'			 	 END W0110G
 '+'			FROM WF_D_'+@OperID+'_A15 _A15
 '+'			LEFT JOIN WF_D_'+@OperID+'_Main _main ON _A15.KeyID = _main.KeyID
 '+'			LEFT JOIN WF_D_'+@OperID+'_A02 _A02 ON _A02.KeyID = _main.KeyID AND _A02.IsLastRow = 1
 '+'			WHERE _main.JobID = '''+@JobID+''' AND _main.JobDataID = '+ convert(VARCHAR(4), @JobDataID) +'
 '+'			AND A1521 >= (SELECT year(A2907) FROM WF_D_'+@OperID+'_A29 WHERE KeyID = _A15.KeyID AND IsLastRow = 1)'
 			EXEC(@SQL)
-			--PRINT @SQL
+			PRINT @SQL
 	    END
 	    
 	    IF @CHILD = 'W05'
@@ -306,7 +312,7 @@ BEGIN
 '+'				, A0221
 '+'				, A0219
 '+'				, A02RKeyID
-'+'				, A0201B
+'+'				, B0001
 '+'				, SourceKeyID
 '+'				, dbo.FN_CodeItemIDToName(''N'', B0001) C_N_B0001
 '+'				, W0110G
@@ -348,7 +354,7 @@ BEGIN
 '+'			FROM WF_D_'+@OperID+'_A02 _A02
 '+'			LEFT JOIN WF_D_'+@OperID+'_Main _main ON _main.KeyID = _A02.KeyID
 '+'			WHERE _main.JobID = '''+@JobID+''' AND _main.JobDataID = '+ convert(VARCHAR(4), @JobDataID) +'
-'+'			AND _A02.DispOrder = (SELECT max(DispOrder) FROM WF_D_'+@OperID+'_A02 WHERE KeyID = _main.KeyID AND A0271 = 2)	
+'+'			AND _A02.DispOrder = (SELECT max(DispOrder) FROM WF_D_'+@OperID+'_A02 WHERE KeyID = _main.KeyID AND A0271 = ''2'')	
 '+'			AND A0265 >= (SELECT A2907 FROM WF_D_'+@OperID+'_A29 WHERE KeyID = _A02.KeyID AND IsLastRow = 1)
 '+'         AND A0201B = _main.B0001'
 			EXEC(@SQL)
@@ -378,7 +384,7 @@ BEGIN
 '+'			FROM WF_D_'+@OperID+'_A02G _A02G
 '+'			LEFT JOIN WF_D_'+@OperID+'_Main _main ON _main.KeyID = _A02G.KeyID
 '+'			WHERE _main.JobID = '''+@JobID+''' AND _main.JobDataID = '+ convert(VARCHAR(4), @JobDataID) +'
-'+'			AND _A02G.DispOrder = (SELECT max(DispOrder) FROM WF_D_'+@OperID+'_A02G WHERE KeyID = _main.KeyID AND A02G02 = 2)
+'+'			AND _A02G.DispOrder = (SELECT max(DispOrder) FROM WF_D_'+@OperID+'_A02G WHERE KeyID = _main.KeyID AND A02G02 = ''2'')
 '+'			AND A02G01 >= (SELECT A2907 FROM WF_D_'+@OperID+'_A29 WHERE KeyID = _A02G.KeyID AND IsLastRow = 1)'
 			EXEC(@SQL)
 	    END
@@ -451,7 +457,7 @@ BEGIN
 '+'				SELECT MAX(DispOrder) FROM WF_D_'+@OperID+'_A08 AS b WHERE b.KeyID=_A08Q.KeyID AND b.A0807 =
 '+'					(SELECT MAX(A0807) FROM WF_D_'+@OperID+'_A08 AS a WHERE a.KeyID=b.KeyID AND A0837=''1''))
 '+'			WHERE _main.JobID = '''+@JobID+''' AND _main.JobDataID = '+ convert(VARCHAR(4), @JobDataID) +'
-'+'			AND _A02.DispOrder = (SELECT max(DispOrder) FROM WF_D_'+@OperID+'_A02 WHERE KeyID = _main.KeyID AND A0284 = 1 )
+'+'			AND _A02.DispOrder = (SELECT max(DispOrder) FROM WF_D_'+@OperID+'_A02 WHERE KeyID = _main.KeyID AND A0284 = ''1'' )
 '+'			AND A0291T >= (SELECT A2907 FROM WF_D_'+@OperID+'_A29 WHERE KeyID = _A02.KeyID AND IsLastRow = 1)
 '+'			AND (isnull(A0292, -2) = 
 '+'				CASE 
@@ -460,6 +466,53 @@ BEGIN
 '+'					 WHEN _Main.PClassID = ''00001'' THEN -1
 '+'					 ELSE A0292
 '+'				END) '
+			EXEC(@SQL)
+			--PRINT @SQL
+		END
+		
+	    IF @InnerChangeCount>0
+	    BEGIN
+	    	SET @SQL = 
+'	    	DELETE FROM WF_D_'+@OperID+'_W0B WHERE KeyID IN (SELECT KeyID FROM WF_D_'+@OperID+'_Main WHERE JobID = '''+@JobID+''' AND JobDataID = '+ convert(VARCHAR(4), @JobDataID) +')
+'+'			AND KeyID IN (SELECT KeyID FROM WF_D_'+@OperID+'_GWYInnerChange)
+		   	
+'+'		   	INSERT INTO dbo.WF_D_'+@OperID+'_W0B (KeyID, DispOrder, IsLastRow,  
+'+'	    	W0BA0141A, W0BA0141B, W0BA0141BQ, W0BA0219, W0BA0221, W0BA0284, W0BA0291, W0BA0291T, W0BA0292, W0BA0293, 
+'+'	    	W0BA0293G, W0BA02RKeyID, W0BB0001, W0BPersonID, W0BUnitName, W0BW0110G, W0BAge)
+'+'	    	
+'+'			SELECT
+'+'			    _main.KeyID KeyID
+'+'			    , row_number() OVER(PARTITION BY _A02.KeyID ORDER BY _A02.DispOrder) AS DispOrder
+'+'			    , 1 AS IsLastRow
+'+'				, A0141A W0BA0141A
+'+'				, _A08.A0801B W0BA0141B
+'+'				, _A08Q.A0801B W0BA0141BQ
+'+'				, A0219 W0BA0219
+'+'				, A0221 W0BA0221
+'+'				, ''1'' W0BA0284
+'+'				, ''9'' W0BA0291
+'+'				, (SELECT GWYInnerChange07 FROM WF_D_'+@OperID+'_GWYInnerChange WHERE KeyID = _main.KeyID AND GWYInnerChange99 = ''02'') W0BA0291T
+'+'				, ''21'' W0BA0292
+'+'				, A0293 W0BA0293
+'+'				, ''2'' W0BA0293G
+'+'				, A02RKeyID
+'+'				, A0201B
+'+'				, SourceKeyID
+'+'				, dbo.FN_CodeItemIDToName(''N'', B0001) C_N_B0001
+'+'				, (SELECT GWYInnerChange97 FROM WF_D_'+@OperID+'_GWYInnerChange WHERE KeyID = _main.KeyID AND GWYInnerChange99 = ''02'') W0BW0110G
+'+'				, substring(CONVERT(VARCHAR, datediff(M, A0111, A0291T)/12), 1, 2)  AS Age
+'+'			FROM WF_D_'+@OperID+'_A02 _A02
+'+'			LEFT JOIN WF_D_'+@OperID+'_Main _main ON _main.KeyID = _A02.KeyID
+'+'			LEFT JOIN WF_D_'+@OperID+'_A08 _A08 ON _A08.KeyID = _main.KeyID AND _A08.DispOrder = (
+'+'				SELECT max(DispOrder) FROM WF_D_'+@OperID+'_A08 _A08Q WHERE KeyID = _main.KeyID 
+'+'				AND A0807 = (SELECT MAX(A0807) FROM WF_D_'+@OperID+'_A08 WHERE KeyID=_A08Q.KeyID))
+'+'			LEFT JOIN WF_D_'+@OperID+'_A08 AS _A08Q ON _main.KeyID=_A08Q.KeyID AND _A08Q.DispOrder = (
+'+'				SELECT MAX(DispOrder) FROM WF_D_'+@OperID+'_A08 AS b WHERE b.KeyID=_A08Q.KeyID AND b.A0807 =
+'+'					(SELECT MAX(A0807) FROM WF_D_'+@OperID+'_A08 AS a WHERE a.KeyID=b.KeyID AND A0837=''1''))
+'+'			WHERE _main.JobID = '''+@JobID+''' AND _main.JobDataID = '+ convert(VARCHAR(4), @JobDataID) +'
+'+'			AND _A02.DispOrder = (SELECT max(DispOrder) FROM WF_D_'+@OperID+'_A02 WHERE KeyID = _main.KeyID )
+'+'			AND _main.KeyID IN (SELECT KeyID FROM WF_D_'+@OperID+'_GWYInnerChange)
+'	
 			EXEC(@SQL)
 			PRINT @SQL
 		END
@@ -470,7 +523,7 @@ BEGIN
 '	    	DELETE FROM WF_D_'+@OperID+'_W0C WHERE KeyID IN (SELECT KeyID FROM WF_D_'+@OperID+'_Main WHERE JobID = '''+@JobID+''' AND JobDataID = '+ convert(VARCHAR(4), @JobDataID) +')
 		   	
 '+'			INSERT INTO dbo.WF_D_'+@OperID+'_W0C (KeyID, DispOrder, IsLastRow, W0CA0801B, W0CA0801BQ, W0CAge, 
-'+'			W0CGWYZWZJ01, W0CGWYZWZJ02, W0CGWYZWZJ09, W0CGWYZWZJ10, W0CGWYZWZJ11, W0CW0110G, W0CGWYZWZJRKeyID, W0CPersonID, W0CB0001)
+'+'			W0CGWYZWZJ01, W0CGWYZWZJ02, W0CGWYZWZJ09, W0CGWYZWZJ10, W0CGWYZWZJ11, W0CW0110G, W0CGWYZWZJRKeyID, W0CPersonID, W0CB0001, W0CGWYZWZJ02T)
 
 '+'			SELECT 
 '+'				_main.KeyID
@@ -502,19 +555,20 @@ BEGIN
 '+'				, GWYZWZJRKeyID
 '+'				, SourceKeyID
 '+'				, B0001
+'+'				, GWYZWZJ02T
 '+'			FROM WF_D_'+@OperID+'_GWYZWZJ _GWYZWZJ
 '+'			LEFT JOIN WF_D_'+@OperID+'_Main _main ON _main.KeyID = _GWYZWZJ.KeyID
 '+'			LEFT JOIN WF_D_'+@OperID+'_A08 _A08 ON _A08.KeyID = _main.KeyID AND _A08.DispOrder = (
 '+'				SELECT max(DispOrder) FROM WF_D_'+@OperID+'_A08 _A08Q WHERE KeyID = _main.KeyID
-'+'				AND A0807 = (SELECT MAX(A0807) FROM WF_D_'+@OperID+'_A08 WHERE KeyID=_A08Q.KeyID AND A0807 < _GWYZWZJ.GWYZWZJ02))
+'+'				AND A0807 = (SELECT MAX(A0807) FROM WF_D_'+@OperID+'_A08 WHERE KeyID=_A08Q.KeyID AND A0807 < _GWYZWZJ.GWYZWZJ02T))
 '+'			LEFT JOIN WF_D_'+@OperID+'_A08 AS _A08Q ON _main.KeyID=_A08Q.KeyID AND _A08Q.DispOrder = (
 '+'				SELECT MAX(DispOrder) FROM WF_D_'+@OperID+'_A08 AS b WHERE b.KeyID=_A08Q.KeyID AND b.A0807 =
 '+'					(SELECT MAX(A0807) FROM WF_D_'+@OperID+'_A08 AS a WHERE a.KeyID=b.KeyID AND A0837=''1''))
 '+'			WHERE _main.JobID = '''+@JobID+''' AND _main.JobDataID = '+ convert(VARCHAR(4), @JobDataID) +'
 '+'			AND _GWYZWZJ.DispOrder = (SELECT max(DispOrder) FROM WF_D_'+@OperID+'_GWYZWZJ WHERE KeyID = _main.KeyID AND GWYZWZJ09 IN (''26'', ''27'') AND GWYZWZJ01 LIKE ''1%'')
-'+'			AND GWYZWZJ02 >= (SELECT A2907 FROM WF_D_'+@OperID+'_A29 WHERE KeyID = _main.KeyID AND IsLastRow = 1)'
+'+'			AND GWYZWZJ02T >= (SELECT A2907 FROM WF_D_'+@OperID+'_A29 WHERE KeyID = _main.KeyID AND IsLastRow = 1)'
 	    	EXEC(@SQL)
-			--PRINT @SQL
+			PRINT @SQL
 	    END
 	    
 	    --PRINT @CHILD
