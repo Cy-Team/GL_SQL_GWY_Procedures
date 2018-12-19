@@ -2,9 +2,9 @@ ALTER PROCEDURE GL_GWYOperPerson_TZData(@SETChild VARCHAR(100), @OperID VARCHAR(
 AS
 BEGIN
 	/*
-	* »ØÌîÖ¸¶¨ÐÅÏ¢×Ó¼¯µÄ ×Ó¼¯
-	* ÓÃÓÚ354¹«ÎñÔ±ÏîÄ¿
-	* ×÷Õß£º ºúÎÄºè
+	* ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½Ó¼ï¿½ï¿½ï¿½ ï¿½Ó¼ï¿½
+	* ï¿½ï¿½ï¿½ï¿½354ï¿½ï¿½ï¿½ï¿½Ô±ï¿½ï¿½Ä¿
+	* ï¿½ï¿½ï¿½ß£ï¿½ ï¿½ï¿½ï¿½Äºï¿½
 	*/
 	DECLARE
 		@CHILD VARCHAR(10) = ''
@@ -15,11 +15,11 @@ BEGIN
 	DECLARE
 		CURSOR_SETCHILD CURSOR
 	    FOR (SELECT ch FROM dbo.Get_StringSplit(@SETChild, ','))
-	OPEN CURSOR_SETCHILD; --´ò¿ªÓÎ±ê
+	OPEN CURSOR_SETCHILD; --ï¿½ï¿½ï¿½Î±ï¿½
 	FETCH NEXT FROM CURSOR_SETCHILD INTO @CHILD ;
 	WHILE @@FETCH_STATUS = 0
 	BEGIN
-		-- É¾³ý
+		-- É¾ï¿½ï¿½
 		SET @Field = (SELECT TOP 1 ItemID FROM SM_SetItems WHERE SetID = @CHILD AND ItemID LIKE '%RKeyID')
 		SET @SQL = '
 		DELETE FROM Data_DB21_'+ @CHILD +' WHERE '+ @Field +' IN (
@@ -30,7 +30,7 @@ BEGIN
 		EXEC(@SQL)
 		PRINT @SQL
 		
-		-- ²åÈë
+		-- ï¿½ï¿½ï¿½ï¿½
 		SET @SQl = '
 			INSERT INTO dbo.Data_DB21_'+ @CHILD +' (KeyID, DispOrder, IsLastRow, LastUpdateTime, LastUpdateUser, '+ 
 				(SELECT TOP 1
