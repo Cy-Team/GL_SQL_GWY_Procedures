@@ -28,7 +28,7 @@ BEGIN
 			WHERE JobID = '''+ @JobID +''' AND JobDataID = '+ convert(VARCHAR(4), @JobDataID) +')'
 		
 		EXEC(@SQL)
-		--PRINT @SQL
+		PRINT @SQL
 		
 		-- ²åÈë
 		SET @SQl = '
@@ -88,10 +88,12 @@ BEGIN
 			SET @SQl = @SQl + ' AND W0AA02G01 >= (SELECT A2907 FROM WF_D_'+@OperID+'_A29 WHERE KeyID = _'+@CHILD+'.KeyID AND IsLastRow = 1)'
 		END
 		
+		/*
 		IF @CHILD = 'W0B'
 		BEGIN
 			SET @SQl = @SQl + ' AND W0BA0291T >= (SELECT A2907 FROM WF_D_'+@OperID+'_A29 WHERE KeyID = _'+@CHILD+'.KeyID AND IsLastRow = 1)'
 		END
+		*/
 		
 		IF @CHILD = 'W0C'
 		BEGIN
