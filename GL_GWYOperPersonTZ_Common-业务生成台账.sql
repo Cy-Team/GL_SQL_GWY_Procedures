@@ -2,13 +2,13 @@ ALTER PROCEDURE GL_GWYOperPersonTZ_Common(@SETChild VARCHAR(100), @OperID VARCHA
 AS
 BEGIN
 	EXEC GL_GWYPerson_SETRKeyID 'A30, A29, A15, A11, A14, A02, A02G, GWYZWZJ', @OperID, @JobID, @JobDataID
-	---???????????SouceKeyID
+	---增加人员更新SouceKeyID
 	DECLARE
 		@CHILD VARCHAR(10) = ''
 		, @COUNT INT = 0
 		, @SQL VARCHAR(8000) = ''
 		, @InnerChangeCount INT = 0
-		, @InnerChangeSql VARCHAR(800) = ''--???????????????
+		, @InnerChangeSql VARCHAR(800) = ''--乡镇内部变动特殊处理
 		, @temSql NVARCHAR(800)=''
 	SET @SQL = 
 '
@@ -346,7 +346,7 @@ BEGIN
 '+'				, A0219
 '+'				, A0221
 '+'				, A02RKeyID
-'+'				, A0201B
+'+'				, B0001
 '+'				, SourceKeyID
 '+'				, dbo.FN_CodeItemIDToName(''N'', B0001) C_N_B0001
 '+'				, W0110G
@@ -443,7 +443,7 @@ BEGIN
 '+'				, A0293
 '+'				, A0293G
 '+'				, A02RKeyID
-'+'				, A0201B
+'+'				, B0001
 '+'				, SourceKeyID
 '+'				, dbo.FN_CodeItemIDToName(''N'', B0001) C_N_B0001
 '+'				, W0110G

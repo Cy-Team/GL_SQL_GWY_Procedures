@@ -2,9 +2,9 @@ ALTER PROCEDURE GL_GWYOperPerson_TZData(@SETChild VARCHAR(100), @OperID VARCHAR(
 AS
 BEGIN
 	/*
-	* ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½Ó¼ï¿½ï¿½ï¿½ ï¿½Ó¼ï¿½
-	* ï¿½ï¿½ï¿½ï¿½354ï¿½ï¿½ï¿½ï¿½Ô±ï¿½ï¿½Ä¿
-	* ï¿½ï¿½ï¿½ß£ï¿½ ï¿½ï¿½ï¿½Äºï¿½
+	* »ØÌîÖ¸¶¨ÐÅÏ¢×Ó¼¯µÄ ×Ó¼¯
+	* ÓÃÓÚ354¹«ÎñÔ±ÏîÄ¿
+	* ×÷Õß£º ºúÎÄºè
 	*/
 	DECLARE
 		@CHILD VARCHAR(10) = ''
@@ -15,22 +15,21 @@ BEGIN
 	DECLARE
 		CURSOR_SETCHILD CURSOR
 	    FOR (SELECT ch FROM dbo.Get_StringSplit(@SETChild, ','))
-	OPEN CURSOR_SETCHILD; --ï¿½ï¿½ï¿½Î±ï¿½
+	OPEN CURSOR_SETCHILD; --´ò¿ªÓÎ±ê
 	FETCH NEXT FROM CURSOR_SETCHILD INTO @CHILD ;
 	WHILE @@FETCH_STATUS = 0
 	BEGIN
-		-- É¾ï¿½ï¿½
+		-- É¾³ý
 		SET @Field = (SELECT TOP 1 ItemID FROM SM_SetItems WHERE SetID = @CHILD AND ItemID LIKE '%RKeyID')
 		SET @SQL = '
-		DELETE FROM Data_DB21_'+ @CHILD +' WHERE '+ @Field +' IN (
-			SELECT a.'+ @Field +' FROM Data_DB21_'+ @CHILD +' a
+			DELETE a FROM Data_DB21_'+ @CHILD +' a
 			LEFT JOIN WF_D_'+ @OperID +'_Main b ON a.'+ @CHILD +'PersonID = b.SourceKeyID AND a.'+ @CHILD +'B0001 = b.B0001
-			WHERE JobID = '''+ @JobID +''' AND JobDataID = '+ convert(VARCHAR(4), @JobDataID) +')'
+			WHERE JobID = '''+ @JobID +''' AND JobDataID = '+ convert(VARCHAR(4), @JobDataID)
 		
 		EXEC(@SQL)
 		PRINT @SQL
 		
-		-- ï¿½ï¿½ï¿½ï¿½
+		-- ²åÈë
 		SET @SQl = '
 			INSERT INTO dbo.Data_DB21_'+ @CHILD +' (KeyID, DispOrder, IsLastRow, LastUpdateTime, LastUpdateUser, '+ 
 				(SELECT TOP 1
