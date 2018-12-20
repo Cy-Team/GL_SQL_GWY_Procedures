@@ -302,7 +302,7 @@ BEGIN
 				, A0219
 				, A0221
 				, A02RKeyID
-				, A0201B
+				, B0001
 				, _A01.PersonID
 				, NULL --, dbo.FN_CodeItemIDToName('N', B0001) C_N_B0001
 				, W0110G
@@ -418,7 +418,7 @@ BEGIN
 				, A0293
 				, A0293G
 				, A02RKeyID
-				, A0201B
+				, B0001
 				, _A01.PersonID
 				, NULL --, dbo.FN_CodeItemIDToName('N', B0001) C_N_B0001
 				, W0110G
