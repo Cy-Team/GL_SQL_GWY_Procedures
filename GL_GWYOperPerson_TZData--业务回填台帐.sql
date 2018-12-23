@@ -22,9 +22,9 @@ BEGIN
 		-- É¾³ý
 		SET @Field = (SELECT TOP 1 ItemID FROM SM_SetItems WHERE SetID = @CHILD AND ItemID LIKE '%RKeyID')
 		SET @SQL = '
-			DELETE a FROM Data_DB21_'+ @CHILD +' a
-			LEFT JOIN WF_D_'+ @OperID +'_Main b ON a.'+ @CHILD +'PersonID = b.SourceKeyID AND a.'+ @CHILD +'B0001 = b.B0001
-			WHERE JobID = '''+ @JobID +''' AND JobDataID = '+ convert(VARCHAR(4), @JobDataID)
+			DELETE _TZ FROM Data_DB21_'+ @CHILD +' _TZ
+			LEFT JOIN WF_D_'+ @OperID +'_Main _Main ON _TZ.'+ @CHILD +'PersonID = _Main.SourceKeyID AND _TZ.'+ @CHILD +'B0001 = _Main.B0001
+			WHERE _Main.JobID = '''+ @JobID +''' AND _Main.JobDataID = '+ convert(VARCHAR(4), @JobDataID)
 		
 		EXEC(@SQL)
 		PRINT @SQL
@@ -39,7 +39,7 @@ BEGIN
 			 +')
 			SELECT
 			    Replace(Newid(),''-'','''') AS KeyID
-			    , row_number() OVER(PARTITION BY KeyID ORDER BY DispOrder) AS DispOrder
+			    , row_number() OVER(PARTITION BY _Main.KeyID ORDER BY _TZ.DispOrder) AS DispOrder
 			    , 1 AS IsLastRow
 			    , getdate() AS LastUpdateTime
 			    , '''+ @UserID +''' AS LastUpdateUser
@@ -47,76 +47,10 @@ BEGIN
 					    [ItemID]=stuff((
 					    SELECT ',' + ItemID FROM SM_SetItems WHERE SetID = @CHILD FOR XML path('')
 					), 1, 1, '')) + '
-			FROM WF_D_' + @OperID + '_'+ @CHILD +' _'+ @CHILD +' WHERE KeyID IN (
-			SELECT KeyID FROM WF_D_' + @OperID + '_Main WHERE JobID = '''+ @JobID +''' AND JobDataID = '+ convert(VARCHAR(4), @JobDataID) +')
-			AND NOT EXISTS (SELECT 1 FROM Data_DB21_'+ @CHILD +' WHERE _'+ @CHILD +'.'+ @CHILD +'B0001 = '+ @CHILD +'B0001 AND ' + @Field + ' = _'+@CHILD+'.'+@Field+' )
-		'
+			FROM WF_D_' + @OperID + '_'+ @CHILD +' _TZ
+			LEFT JOIN WF_D_'+ @OperID +'_Main _Main ON _TZ.'+ @CHILD +'PersonID = _Main.SourceKeyID AND _TZ.'+ @CHILD +'B0001 = _Main.B0001
+			WHERE _Main.JobID = '''+ @JobID +''' AND _Main.JobDataID = '+ convert(VARCHAR(4), @JobDataID)
 		
-		IF @CHILD = 'W04'
-		BEGIN
-			SET @SQl = @SQl + ' AND W04A1521 >= (SELECT year(A2907) FROM WF_D_'+@OperID+'_A29 WHERE KeyID = _'+@CHILD+'.KeyID AND IsLastRow = 1)'
-		END
-		
-		IF @CHILD = 'W05'
-		BEGIN
-			SET @SQl = @SQl + ' AND W05A1107 >= (SELECT A2907 FROM WF_D_'+@OperID+'_A29 WHERE KeyID = _'+@CHILD+'.KeyID AND IsLastRow = 1)'
-		END
-		
-		IF @CHILD = 'W06'
-		BEGIN
-			SET @SQl = @SQl + ' AND W06A1407 >= (SELECT A2907 FROM WF_D_'+@OperID+'_A29 WHERE KeyID = _'+@CHILD+'.KeyID AND IsLastRow = 1)'
-		END
-		
-		IF @CHILD = 'W07'
-		BEGIN
-			SET @SQl = @SQl + ' AND W07A0243 >= (SELECT A2907 FROM WF_D_'+@OperID+'_A29 WHERE KeyID = _'+@CHILD+'.KeyID AND IsLastRow = 1)'
-		END
-		
-		IF @CHILD = 'W08'
-		BEGIN
-			SET @SQl = @SQl + ' AND W08A0265 >= (SELECT A2907 FROM WF_D_'+@OperID+'_A29 WHERE KeyID = _'+@CHILD+'.KeyID AND IsLastRow = 1)'
-		END
-		
-		IF @CHILD = 'W09'
-		BEGIN
-			SET @SQl = @SQl + ' AND W09A02G01 >= (SELECT A2907 FROM WF_D_'+@OperID+'_A29 WHERE KeyID = _'+@CHILD+'.KeyID AND IsLastRow = 1)'
-		END
-		
-		IF @CHILD = 'W0A'
-		BEGIN
-			SET @SQl = @SQl + ' AND W0AA02G01 >= (SELECT A2907 FROM WF_D_'+@OperID+'_A29 WHERE KeyID = _'+@CHILD+'.KeyID AND IsLastRow = 1)'
-		END
-		
-		/*
-		IF @CHILD = 'W0B'
-		BEGIN
-			SET @SQl = @SQl + ' AND W0BA0291T >= (SELECT A2907 FROM WF_D_'+@OperID+'_A29 WHERE KeyID = _'+@CHILD+'.KeyID AND IsLastRow = 1)'
-		END
-		*/
-		
-		IF @CHILD = 'W0C'
-		BEGIN
-			SET @SQl = @SQl + ' AND W0CGWYZWZJ02T >= (SELECT A2907 FROM WF_D_'+@OperID+'_A29 WHERE KeyID = _'+@CHILD+'.KeyID AND IsLastRow = 1)'
-		END
-		
-		EXEC(@SQL)
-		PRINT @SQL
-		
-		SET @SQl = '
-			UPDATE _'+@CHILD+'A
-				SET '+ (
-					SELECT TOP 1
-					    [ItemID]=stuff((
-					    SELECT ', _'+@CHILD+'A.'+ ItemID + '= _'+@CHILD+'B.' + ItemID FROM SM_SetItems WHERE SetID = ''+@CHILD+'' FOR XML path('')
-					), 1, 1, '')
-				)+'
-			FROM Data_DB21_'+@CHILD+' _'+@CHILD+'A, WF_D_'+@OperID+'_'+@CHILD+' _'+@CHILD+'B
-			WHERE _'+@CHILD+'B.KeyID IN (
-				SELECT KeyID FROM WF_D_'+@OperID+'_Main WHERE JobID = '''+ @JobID +''' AND JobDataID = '+convert(VARCHAR(4), @JobDataID)+')
-				AND _'+@CHILD+'B.'+@Field+' = _'+@CHILD+'A.'+@Field+'
-				AND _'+@CHILD+'B.'+@CHILD+'PersonID = _'+@CHILD+'A.'+@CHILD+'PersonID
-				AND _'+@CHILD+'B.'+@CHILD+'B0001 = _'+@CHILD+'A.'+@CHILD+'B0001
-		'
 		EXEC(@SQL)
 		PRINT @SQL
 				

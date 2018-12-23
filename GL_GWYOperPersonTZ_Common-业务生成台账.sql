@@ -2,14 +2,15 @@ ALTER PROCEDURE GL_GWYOperPersonTZ_Common(@SETChild VARCHAR(100), @OperID VARCHA
 AS
 BEGIN
 	EXEC GL_GWYPerson_SETRKeyID 'A30, A29, A15, A11, A14, A02, A02G, GWYZWZJ', @OperID, @JobID, @JobDataID
-	---Ôö¼ÓÈËÔ±¸üÐÂSouceKeyID
+	---ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô±ï¿½ï¿½ï¿½ï¿½SouceKeyID
 	DECLARE
 		@CHILD VARCHAR(10) = ''
 		, @COUNT INT = 0
 		, @SQL VARCHAR(8000) = ''
 		, @InnerChangeCount INT = 0
-		, @InnerChangeSql VARCHAR(800) = ''--ÏçÕòÄÚ²¿±ä¶¯ÌØÊâ´¦Àí
+		, @InnerChangeSql VARCHAR(800) = ''--ï¿½ï¿½ï¿½ï¿½ï¿½Ú²ï¿½ï¿½ä¶¯ï¿½ï¿½ï¿½â´¦ï¿½ï¿½
 		, @temSql NVARCHAR(800)=''
+		
 	SET @SQL = 
 '
 	UPDATE WF_D_'+@OperID+'_Main SET SourceKeyID = KeyID WHERE JobID = '''+@JobID+''' AND JobDataID =
@@ -193,18 +194,14 @@ BEGIN
 '+'			 	, dbo.FN_CodeItemIDToName(''N'', B0001) C_N_B0001
 '+'			 	, SourceKeyID
 '+'			 	, A15RKeyID
-'+'			  	, CASE 
-'+'			 		WHEN (SELECT COUNT(1) FROM WF_D_'+@OperID+'_W02 WHERE KeyID = _main.KeyID AND year(W02A3004) > _A15.A1521) > 0 
-'+'			 		THEN (SELECT W02W0110G FROM WF_D_'+@OperID+'_W02 WHERE KeyID = _main.KeyID)
-'+'			 		ELSE W0110G
-'+'			 	 END W0110G
+'+'			 	, W0110G
 '+'			FROM WF_D_'+@OperID+'_A15 _A15
 '+'			LEFT JOIN WF_D_'+@OperID+'_Main _main ON _A15.KeyID = _main.KeyID
 '+'			LEFT JOIN WF_D_'+@OperID+'_A02 _A02 ON _A02.KeyID = _main.KeyID AND _A02.IsLastRow = 1
 '+'			WHERE _main.JobID = '''+@JobID+''' AND _main.JobDataID = '+ convert(VARCHAR(4), @JobDataID) +'
 '+'			AND A1521 >= (SELECT year(A2907) FROM WF_D_'+@OperID+'_A29 WHERE KeyID = _A15.KeyID AND IsLastRow = 1)'
 			EXEC(@SQL)
-			PRINT @SQL
+			--PRINT @SQL
 	    END
 	    
 	    IF @CHILD = 'W05'
@@ -514,7 +511,7 @@ BEGIN
 '+'			AND _main.KeyID IN (SELECT KeyID FROM WF_D_'+@OperID+'_GWYInnerChange)
 '	
 			EXEC(@SQL)
-			PRINT @SQL
+			--PRINT @SQL
 		END
 		
 		IF @CHILD = 'W0C'
@@ -531,7 +528,7 @@ BEGIN
 '+'			    , 1 AS IsLastRow
 '+'				, _A08.A0801B
 '+'				, _A08Q.A0801B A0801BQ
-'+'				, substring(CONVERT(VARCHAR, datediff(M, A0111, GWYZWZJ02)/12), 1, 2)  AS W0CAge
+'+'				, substring(CONVERT(VARCHAR, datediff(M, A0111, GWYZWZJ02T)/12), 1, 2)  AS W0CAge
 '+'				, (
 '+'				 CASE GWYZWZJ01
 '+'			         WHEN ''11'' THEN ''9901''
@@ -568,9 +565,65 @@ BEGIN
 '+'			AND _GWYZWZJ.DispOrder = (SELECT max(DispOrder) FROM WF_D_'+@OperID+'_GWYZWZJ WHERE KeyID = _main.KeyID AND GWYZWZJ09 IN (''26'', ''27'') AND GWYZWZJ01 LIKE ''1%'')
 '+'			AND GWYZWZJ02T >= (SELECT A2907 FROM WF_D_'+@OperID+'_A29 WHERE KeyID = _main.KeyID AND IsLastRow = 1)'
 	    	EXEC(@SQL)
-			PRINT @SQL
+			--PRINT @SQL
 	    END
 	    
+	    --ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½â´¦ï¿½ï¿½			
+		IF @InnerChangeCount>0 AND (SELECT COUNT(1) FROM dbo.Get_StringSplit('W04, W05, W06, W07, W08, W09, W0A, W0C', ',') WHERE ch = @CHILD) > 0
+    	BEGIN
+    		
+    		SET @SQL = 
+'
+			UPDATE _'+@CHILD+' SET '+@CHILD+'W0110G = (SELECT GWYInnerChange97 FROM WF_D_'+@OperID+'_GWYInnerChange 
+'+'				WHERE KeyID = _'+@CHILD+'.KeyID AND GWYInnerChange99 = ''02'')
+'+'			FROM WF_D_'+@OperID+'_'+@CHILD+' _'+@CHILD+' WHERE _'+@CHILD+'.KeyID IN (
+'+'				SELECT _Main.KeyID FROM WF_D_'+@OperID+'_GWYInnerChange _GWYInnerChange
+'+'				LEFT JOIN WF_D_'+@OperID+'_Main _Main ON _Main.KeyID = _GWYInnerChange.KeyID
+'+'				WHERE _Main.JobID = '''+@JobID+''' AND _Main.JobDataID = '+ convert(VARCHAR(4), @JobDataID)
+    		
+    		IF @CHILD = 'W04'
+    		BEGIN
+    			SET @SQL = @SQL + ' AND _W04.W04A1521 < year(_GWYInnerChange.GWYInnerChange07)) '
+    		END
+    		
+    		IF @CHILD = 'W05'
+    		BEGIN
+    			SET @SQL = @SQL + ' AND _W05.W05A1111 < _GWYInnerChange.GWYInnerChange07) '
+    		END
+    		
+    		IF @CHILD = 'W06'
+    		BEGIN
+    			SET @SQL = @SQL + ' AND _W06.W06A1407 < _GWYInnerChange.GWYInnerChange07) '
+    		END
+    		
+    		IF @CHILD = 'W07'
+    		BEGIN
+    			SET @SQL = @SQL + ' AND _W07.W07A0243 < _GWYInnerChange.GWYInnerChange07) '
+    		END
+    		
+    		IF @CHILD = 'W08'
+    		BEGIN
+    			SET @SQL = @SQL + ' AND _W08.W08A0265 < _GWYInnerChange.GWYInnerChange07) '
+    		END
+    		
+    		IF @CHILD = 'W09'
+    		BEGIN
+    			SET @SQL = @SQL + ' AND _W09.W09A02G01 < _GWYInnerChange.GWYInnerChange07) '
+    		END
+    		
+    		IF @CHILD = 'W0A'
+    		BEGIN
+    			SET @SQL = @SQL + ' AND _W0A.W0AA02G01 < _GWYInnerChange.GWYInnerChange07) '
+    		END
+    		
+    		IF @CHILD = 'W0C'
+    		BEGIN
+    			SET @SQL = @SQL + ' AND _W0C.W0CGWYZWZJ02 < _GWYInnerChange.GWYInnerChange07) '
+    		END
+    		
+    		EXEC (@SQL)
+    		PRINT @SQL
+    	END
 	    --PRINT @CHILD
 	    FETCH NEXT FROM CURSOR_SETCHILD INTO @CHILD;
 	END
