@@ -384,7 +384,7 @@ BEGIN
 '+'			AND _A02G.DispOrder = (SELECT max(DispOrder) FROM WF_D_'+@OperID+'_A02G WHERE KeyID = _main.KeyID AND A02G02 = ''2'')
 '+'			AND A02G01 >= (SELECT A2907 FROM WF_D_'+@OperID+'_A29 WHERE KeyID = _A02G.KeyID AND IsLastRow = 1)'
 			EXEC(@SQL)
-	    END
+	  END
 	    
 	    IF @CHILD = 'W0A'
 	    BEGIN
@@ -493,7 +493,7 @@ BEGIN
 '+'				, A0293 W0BA0293
 '+'				, ''2'' W0BA0293G
 '+'				, A02RKeyID
-'+'				, A0201B
+'+'				, B0001
 '+'				, SourceKeyID
 '+'				, dbo.FN_CodeItemIDToName(''N'', B0001) C_N_B0001
 '+'				, (SELECT GWYInnerChange97 FROM WF_D_'+@OperID+'_GWYInnerChange WHERE KeyID = _main.KeyID AND GWYInnerChange99 = ''02'') W0BW0110G
@@ -511,7 +511,7 @@ BEGIN
 '+'			AND _main.KeyID IN (SELECT KeyID FROM WF_D_'+@OperID+'_GWYInnerChange)
 '	
 			EXEC(@SQL)
-			--PRINT @SQL
+			PRINT @SQL
 		END
 		
 		IF @CHILD = 'W0C'

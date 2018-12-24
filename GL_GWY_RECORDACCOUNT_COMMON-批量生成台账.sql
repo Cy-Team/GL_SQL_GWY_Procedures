@@ -463,7 +463,7 @@ BEGIN
 			    , 1 AS IsLastRow
 				, _A08.A0801B
 				, _A08Q.A0801B A0801BQ
-				, substring(CONVERT(VARCHAR, datediff(M, A0111, GWYZWZJ02)/12), 1, 2)  AS W0CAge
+				, substring(CONVERT(VARCHAR, datediff(M, A0111, GWYZWZJ02T)/12), 1, 2)  AS W0CAge
 				, (
 				 CASE GWYZWZJ01
 			         WHEN '11' THEN '9901'
