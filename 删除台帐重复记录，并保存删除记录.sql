@@ -1,0 +1,56 @@
+
+DECLARE
+		@CHILD VARCHAR(10) = ''
+		, @SETCHILD VARCHAR(100) = 'W02, W03, W04, W05, W06, W07, W08, W09, W0A, W0B, W0C'
+		, @SQL NVARCHAR(2000) = ''
+		, @TZCHILD VARCHAR(30) = ''
+	DECLARE
+		CURSOR_SETCHILD CURSOR
+	    FOR (SELECT ch FROM dbo.Get_StringSplit(@SETChild, ','))
+	OPEN CURSOR_SETCHILD; 
+	FETCH NEXT FROM CURSOR_SETCHILD INTO @CHILD ;
+	WHILE @@FETCH_STATUS = 0
+	BEGIN
+		SET @TZCHILD = 
+		CASE 
+			WHEN @CHILD = 'W02' THEN 'A30'
+			WHEN @CHILD = 'W03' THEN 'A29'
+			WHEN @CHILD = 'W04' THEN 'A15'
+			WHEN @CHILD = 'W05' THEN 'A11'
+			WHEN @CHILD = 'W06' THEN 'A14'
+			WHEN @CHILD = 'W07' THEN 'A02'
+			WHEN @CHILD = 'W08' THEN 'A02'
+			WHEN @CHILD = 'W09' THEN 'A02G'
+			WHEN @CHILD = 'W0A' THEN 'A02G'
+			WHEN @CHILD = 'W0B' THEN 'A02'
+			WHEN @CHILD = 'W0C' THEN 'GWYZWZJ'
+		END 
+		
+		--EXEC ('dbo.GS_SMCheckDropTable Data_DB21_'+ @CHILD +'_2018_12_24')
+		
+		SET @SQL = '
+SELECT * INTO Data_DB21_'+ @CHILD +'_2018_12_24 FROM Data_DB21_'+ @CHILD +' a
+WHERE a.'+ @CHILD + @TZCHILD +'RKeyID + a.'+ @CHILD +'B0001 + '+ @CHILD +'PersonID IN(
+	SELECT '+ @CHILD + @TZCHILD +'RKeyID + '+ @CHILD +'B0001 + '+ @CHILD +'PersonID FROM Data_DB21_'+ @CHILD +' 
+	GROUP BY '+ @CHILD + @TZCHILD +'RKeyID + '+ @CHILD +'B0001 + '+ @CHILD +'PersonID HAVING count(*)>1)
+AND a.KeyID <>(
+	SELECT max(b.KeyID) FROM Data_DB21_'+ @CHILD +' b WHERE 
+	a.'+ @CHILD + @TZCHILD +'RKeyID + a.'+ @CHILD +'B0001 + a.'+ @CHILD +'PersonID = b.'+ @CHILD + @TZCHILD +'RKeyID + b.'+ @CHILD +'B0001 + b.'+ @CHILD +'PersonID)'
+		
+		EXEC (@SQL)
+		
+		SET @SQL = '
+DELETE a FROM Data_DB21_'+ @CHILD +' a
+WHERE a.'+ @CHILD + @TZCHILD +'RKeyID + a.'+ @CHILD +'B0001 + '+ @CHILD +'PersonID IN(
+	SELECT '+ @CHILD + @TZCHILD +'RKeyID + '+ @CHILD +'B0001 + '+ @CHILD +'PersonID FROM Data_DB21_'+ @CHILD +' 
+	GROUP BY '+ @CHILD + @TZCHILD +'RKeyID + '+ @CHILD +'B0001 + '+ @CHILD +'PersonID HAVING count(*)>1)
+AND a.KeyID <> (
+	SELECT max(b.KeyID) FROM Data_DB21_'+ @CHILD +' b WHERE 
+	a.'+ @CHILD + @TZCHILD +'RKeyID + a.'+ @CHILD +'B0001 + a.'+ @CHILD +'PersonID = b.'+ @CHILD + @TZCHILD +'RKeyID + b.'+ @CHILD +'B0001 + b.'+ @CHILD +'PersonID)'
+
+		EXEC (@SQL)
+		
+ 		FETCH NEXT FROM CURSOR_SETCHILD INTO @CHILD;
+	END
+	CLOSE CURSOR_SETCHILD;
+	DEALLOCATE CURSOR_SETCHILD;

@@ -4,7 +4,8 @@ BEGIN
 	-- 声明变量
 	DECLARE
 		@CHILD VARCHAR(30) = ''
-
+		, @COUNT INT = 0
+				
 	-- 创建条件临时表
 	EXEC dbo.GS_SMCheckDropTable #WHERE_SCOPE_PERSONID
 	CREATE TABLE #WHERE_SCOPE_PERSONID
@@ -13,7 +14,10 @@ BEGIN
 	)
 	-- 把人员范围插入临时表
 	INSERT INTO #WHERE_SCOPE_PERSONID EXEC (@WHERE_SQLSTR)
-	SELECT * FROM #WHERE_SCOPE_PERSONID
+	--SELECT * FROM #WHERE_SCOPE_PERSONID
+	
+	-- 是否存在乡镇记录
+	SELECT @COUNT = COUNT(1) FROM Data_Person_GWYINNERCHANGE WHERE PersonID IN (SELECT PersonID FROM #WHERE_SCOPE_PERSONID)
 	
 	DECLARE
 		CURSOR_SETCHILD CURSOR
@@ -65,6 +69,36 @@ BEGIN
 			WHERE --A30RKeyID NOT IN (SELECT W02A30RKeyID FROM Data_DB21_W02) --AND A30RKeyID IS NOT NULL 
 			_A01.PersonID IN (SELECT PersonID FROM #WHERE_SCOPE_PERSONID)
 			
+			IF @COUNT > 0
+			BEGIN
+				
+				INSERT INTO dbo.Data_DB21_W02 (KeyID, DispOrder, IsLastRow, W02A0215A, W02A0219, W02A0221, 
+				W02A0284, W02A0291, W02A0292, W02A0293, W02A0293G, W02A3001, W02A3004, W02B0001, W02UnitName, 
+				W02W0110G, W02PersonID, W02A30RKeyID)
+				
+				SELECT
+				    replace(newid(), '-', '') AS KeyID
+				    , row_number() OVER(PARTITION BY _change.PersonID ORDER BY _change.DispOrder) AS DispOrder
+				    , 1 AS IsLastRow
+				    , GWYInnerChange10
+				    , GWYInnerChange12
+				    , GWYInnerChange09
+				    , NULL
+				    , NULL
+				    , NULL
+				    , NULL
+				    , NULL
+				    , GWYInnerChange08
+				    , GWYInnerChange07
+				    , GWYInnerChange01
+				    , NULL --,dbo.FN_CodeItemIDToName('N', GWYInnerChange01) C_N_GWYInnerChange01
+				    , GWYInnerChange97
+				    , PersonID
+				    , replace(newid(), '-', '') AS RKeyID
+				FROM Data_Person_GWYINNERCHANGE _change
+				WHERE PersonID IN (SELECT PersonID FROM #WHERE_SCOPE_PERSONID) AND GWYInnerChange99 = '02'
+			END
+			
 			--SELECT * FROM Data_DB21_W02 WHERE W02PersonID IN (SELECT PersonID FROM #WHERE_SCOPE_PERSONID)
 		END
 		
@@ -101,6 +135,29 @@ BEGIN
 			WHERE --A29RKeyID NOT IN (SELECT W03A29RKeyID FROM Data_DB21_W03) --AND A29RKeyID IS NOT NULL 
 			_A01.PersonID IN (SELECT PersonID FROM #WHERE_SCOPE_PERSONID)
 			
+			IF @COUNT > 0
+			BEGIN
+			
+				INSERT INTO dbo.Data_DB21_W03 (KeyID, DispOrder, IsLastRow, W03A0215A, W03A0219, W03A0221, 
+			W03A2907, W03A2911, W03B0001, W03UnitName, W03W0110G, W03PersonID, W03A29RKeyID)
+				
+				SELECT
+				    replace(newid(), '-', '') AS KeyID
+				    , row_number() OVER(PARTITION BY _change.PersonID ORDER BY _change.DispOrder) AS DispOrder
+				    , 1 AS IsLastRow
+				    , GWYInnerChange06
+				    , GWYInnerChange11
+				    , GWYInnerChange05
+				    , GWYInnerChange03
+				    , GWYInnerChange04
+				    , GWYInnerChange01
+				    , NULL --, dbo.FN_CodeItemIDToName('N', GWYInnerChange01) C_N_GWYInnerChange01
+				    , GWYInnerChange97
+				    , PersonID
+				    , replace(newid(), '-', '') AS RKeyID
+				FROM Data_Person_GWYINNERCHANGE _change
+				WHERE PersonID IN (SELECT PersonID FROM #WHERE_SCOPE_PERSONID) AND GWYInnerChange99 = '01'
+			END
 			--SELECT * FROM Data_DB21_W03 WHERE W03PersonID IN (SELECT PersonID FROM #WHERE_SCOPE_PERSONID)
 		END
 		
@@ -142,6 +199,15 @@ BEGIN
 			AND _A01.PersonID IN (SELECT PersonID FROM #WHERE_SCOPE_PERSONID)
 			
 			--SELECT * FROM Data_DB21_W04 WHERE W04PersonID IN (SELECT PersonID FROM #WHERE_SCOPE_PERSONID)
+			IF @COUNT > 0
+			BEGIN
+				UPDATE _TZ SET W04W0110G = (SELECT GWYInnerChange97 FROM Data_Person_GWYINNERCHANGE 
+					WHERE PersonID = _TZ.W04PersonID AND GWYInnerChange99 = '02')
+				FROM Data_DB21_W04 _TZ, Data_Person_A01 _A01 WHERE _TZ.W04PersonID = _A01.PersonID
+				AND _TZ.W04B0001 = _A01.B0001 AND _TZ.W04PersonID IN (
+					SELECT PersonID FROM Data_Person_GWYINNERCHANGE WHERE _TZ.W04PersonID = PersonID
+					AND _TZ.W04A1521 < year(GWYInnerChange07)) 
+			END
 		END
 		
 		--4. A11-W05 培训信息台帐
@@ -192,6 +258,15 @@ BEGIN
 			AND _A01.PersonID IN (SELECT PersonID FROM #WHERE_SCOPE_PERSONID)
 			
 			--SELECT * FROM Data_DB21_W05 WHERE W05PersonID IN (SELECT PersonID FROM #WHERE_SCOPE_PERSONID)
+			IF @COUNT > 0
+			BEGIN
+				UPDATE _TZ SET W05W0110G = (SELECT GWYInnerChange97 FROM Data_Person_GWYINNERCHANGE 
+					WHERE PersonID = _TZ.W05PersonID AND GWYInnerChange99 = '02')
+				FROM Data_DB21_W05 _TZ, Data_Person_A01 _A01 WHERE _TZ.W05PersonID = _A01.PersonID
+				AND _TZ.W05B0001 = _A01.B0001 AND _TZ.W05PersonID IN (
+					SELECT PersonID FROM Data_Person_GWYINNERCHANGE WHERE _TZ.W05PersonID = PersonID
+					AND _TZ.W05A1111 < GWYInnerChange07) 
+			END
 		END
 		
 		--5. A14-W06 奖惩信息台帐
@@ -233,6 +308,15 @@ BEGIN
 		 	AND _A01.PersonID IN (SELECT PersonID FROM #WHERE_SCOPE_PERSONID)
 			
 			--SELECT * FROM Data_DB21_W06 WHERE W06PersonID IN (SELECT PersonID FROM #WHERE_SCOPE_PERSONID)
+			IF @COUNT > 0
+			BEGIN
+				UPDATE _TZ SET W06W0110G = (SELECT GWYInnerChange97 FROM Data_Person_GWYINNERCHANGE 
+					WHERE PersonID = _TZ.W06PersonID AND GWYInnerChange99 = '02')
+				FROM Data_DB21_W06 _TZ, Data_Person_A01 _A01 WHERE _TZ.W06PersonID = _A01.PersonID
+				AND _TZ.W06B0001 = _A01.B0001 AND _TZ.W06PersonID IN (
+					SELECT PersonID FROM Data_Person_GWYINNERCHANGE WHERE _TZ.W06PersonID = PersonID
+					AND _TZ.W06A1407 < GWYInnerChange07) 
+			END
 		END
 		
 		--6. A02-W07 晋升信息台帐
@@ -251,7 +335,7 @@ BEGIN
 	        SELECT
 			     replace(newid(), '-', '') AS KeyID
 			    , row_number() OVER(PARTITION BY _A02.PersonID ORDER BY _A02.DispOrder) AS DispOrder
-			    , 1 AS IsLastRow
+			  , 1 AS IsLastRow
 				, substring(CONVERT(VARCHAR, datediff(M, A0111, A0243)/12), 1, 2)  AS Age
 				, A0141A
 				, _A08.A0801B
@@ -281,6 +365,15 @@ BEGIN
 			AND _A01.PersonID IN (SELECT PersonID FROM #WHERE_SCOPE_PERSONID)
 			
 			--SELECT * FROM Data_DB21_W07 WHERE W07PersonID IN (SELECT PersonID FROM #WHERE_SCOPE_PERSONID)
+			IF @COUNT > 0
+			BEGIN
+				UPDATE _TZ SET W07W0110G = (SELECT GWYInnerChange97 FROM Data_Person_GWYINNERCHANGE 
+					WHERE PersonID = _TZ.W07PersonID AND GWYInnerChange99 = '02')
+				FROM Data_DB21_W07 _TZ, Data_Person_A01 _A01 WHERE _TZ.W07PersonID = _A01.PersonID
+				AND _TZ.W07B0001 = _A01.B0001 AND _TZ.W07PersonID IN (
+					SELECT PersonID FROM Data_Person_GWYINNERCHANGE WHERE _TZ.W07PersonID = PersonID
+					AND _TZ.W07A0243 < GWYInnerChange07) 
+			END
 		END
 		
 		--7. A02-W08 降职信息集
@@ -315,6 +408,15 @@ BEGIN
 			AND _A01.PersonID IN (SELECT PersonID FROM #WHERE_SCOPE_PERSONID)
 			
 			--SELECT * FROM Data_DB21_W08 WHERE W08PersonID IN (SELECT PersonID FROM #WHERE_SCOPE_PERSONID)
+			IF @COUNT > 0
+			BEGIN
+				UPDATE _TZ SET W08W0110G = (SELECT GWYInnerChange97 FROM Data_Person_GWYINNERCHANGE 
+					WHERE PersonID = _TZ.W08PersonID AND GWYInnerChange99 = '02')
+				FROM Data_DB21_W08 _TZ, Data_Person_A01 _A01 WHERE _TZ.W08PersonID = _A01.PersonID
+				AND _TZ.W08B0001 = _A01.B0001 AND _TZ.W08PersonID IN (
+					SELECT PersonID FROM Data_Person_GWYINNERCHANGE WHERE _TZ.W08PersonID = PersonID
+					AND _TZ.W08A0265 < GWYInnerChange07) 
+			END
 		END
 		
 		--8. A02G-W09 免职信息集
@@ -351,6 +453,15 @@ BEGIN
 			AND _A01.PersonID IN (SELECT PersonID FROM #WHERE_SCOPE_PERSONID)
 			
 			--SELECT * FROM Data_DB21_W09 WHERE W09PersonID IN (SELECT PersonID FROM #WHERE_SCOPE_PERSONID)
+			IF @COUNT > 0
+			BEGIN
+				UPDATE _TZ SET W08W0110G = (SELECT GWYInnerChange97 FROM Data_Person_GWYINNERCHANGE 
+					WHERE PersonID = _TZ.W08PersonID AND GWYInnerChange99 = '02')
+				FROM Data_DB21_W08 _TZ, Data_Person_A01 _A01 WHERE _TZ.W08PersonID = _A01.PersonID
+				AND _TZ.W08B0001 = _A01.B0001 AND _TZ.W08PersonID IN (
+					SELECT PersonID FROM Data_Person_GWYINNERCHANGE WHERE _TZ.W08PersonID = PersonID
+					AND _TZ.W08A0265 < GWYInnerChange07) 
+			END
 		END
 		
 		--9. A02G-W0A 辞去领导职务信息集
@@ -386,6 +497,15 @@ BEGIN
 			AND _A01.PersonID IN (SELECT PersonID FROM #WHERE_SCOPE_PERSONID)
 			
 			--SELECT * FROM Data_DB21_W0A WHERE W0APersonID IN (SELECT PersonID FROM #WHERE_SCOPE_PERSONID)
+			IF @COUNT > 0
+			BEGIN
+				UPDATE _TZ SET W0AW0110G = (SELECT GWYInnerChange97 FROM Data_Person_GWYINNERCHANGE 
+					WHERE PersonID = _TZ.W0APersonID AND GWYInnerChange99 = '02')
+				FROM Data_DB21_W0A _TZ, Data_Person_A01 _A01 WHERE _TZ.W0APersonID = _A01.PersonID
+				AND _TZ.W0AB0001 = _A01.B0001 AND _TZ.W0APersonID IN (
+					SELECT PersonID FROM Data_Person_GWYINNERCHANGE WHERE _TZ.W0APersonID = PersonID
+					AND _TZ.W0AA02G01 < GWYInnerChange07) 
+			END
 		END
 		
 		--10. A02-W0B 交流信息集
@@ -397,51 +517,94 @@ BEGIN
 			DELETE _W0B FROM Data_DB21_W0B _W0B WHERE W0BB0001 = (
 				SELECT B0001 FROM Data_Person_A01 WHERE PersonID = _W0B.W0BPersonID)
 			AND W0BPersonID IN (SELECT PersonID FROM #WHERE_SCOPE_PERSONID)
-				
-		   	INSERT INTO dbo.Data_DB21_W0B (KeyID, DispOrder, IsLastRow,  
-	    	W0BA0141A, W0BA0141B, W0BA0141BQ, W0BA0219, W0BA0221, W0BA0284, W0BA0291, W0BA0291T, W0BA0292, W0BA0293, 
-	    	W0BA0293G, W0BA02RKeyID, W0BB0001, W0BPersonID, W0BUnitName, W0BW0110G, W0BAge)
-	    	
-			SELECT
-			     replace(newid(), '-', '') AS KeyID
-			    , row_number() OVER(PARTITION BY _A02.PersonID ORDER BY _A02.DispOrder) AS DispOrder
-			    , 1 AS IsLastRow
-				, A0141A
-				, _A08.A0801B
-				, _A08Q.A0801B W0BA0141BQ
-				, A0219
-				, A0221
-				, A0284
-				, A0291
-				, A0291T
-				, A0292
-				, A0293
-				, A0293G
-				, A02RKeyID
-				, B0001
-				, _A01.PersonID
-				, NULL --, dbo.FN_CodeItemIDToName('N', B0001) C_N_B0001
-				, W0110G
-				, substring(CONVERT(VARCHAR, datediff(M, A0111, A0291T)/12), 1, 2)  AS Age
-			FROM Data_Person_A02 _A02
-			LEFT JOIN Data_Person_A01 _A01 ON _A01.PersonID = _A02.PersonID
-			LEFT JOIN Data_Person_A08 _A08 ON _A08.PersonID = _A01.PersonID AND _A08.DispOrder = (
-				SELECT max(DispOrder) FROM Data_Person_A08 _A08Q WHERE PersonID = _A01.PersonID
-				AND A0807 = (SELECT MAX(A0807) FROM Data_Person_A08 WHERE PersonID=_A08Q.PersonID AND A0807 < _A02.A0291T))
-			LEFT JOIN Data_Person_A08 _A08Q ON _A01.PersonID = _A08Q.PersonID AND _A08Q.DispOrder = (
-				SELECT MAX(DispOrder) FROM Data_Person_A08 AS b WHERE b.PersonID=_A08Q.PersonID AND b.A0807 =
-					(SELECT MAX(A0807) FROM Data_Person_A08 AS a WHERE a.PersonID=b.PersonID AND A0837='1'))
-			WHERE _A02.DispOrder = (SELECT max(DispOrder) FROM Data_Person_A02 WHERE PersonID = _A01.PersonID AND A0284 = 1 )
-			AND A0291T >= (SELECT A2907 FROM Data_Person_A29 WHERE PersonID = _A02.PersonID AND IsLastRow = 1)
-			--AND A02RKeyID NOT IN (SELECT W0BA02RKeyID FROM Data_DB21_W0B) --AND A02RKeyID IS NOT NULL 
-			AND (isnull(A0292, -2) = 
-				CASE 
-					 WHEN _A01.PClassID = '00001' AND A0292 = 3 THEN 3
-					 WHEN _A01.PClassID = '00001' AND A0292 = 24 THEN 24
-					 WHEN _A01.PClassID = '00001' THEN -1
-					 ELSE A0292
-				END) 
-			AND _A01.PersonID IN (SELECT PersonID FROM #WHERE_SCOPE_PERSONID)
+			
+			--乡镇台帐区分交流
+			IF @COUNT > 0
+			BEGIN
+				INSERT INTO dbo.Data_DB21_W0B (KeyID, DispOrder, IsLastRow,  
+		    	W0BA0141A, W0BA0141B, W0BA0141BQ, W0BA0219, W0BA0221, W0BA0284, W0BA0291, W0BA0291T, W0BA0292, W0BA0293, 
+		    	W0BA0293G, W0BA02RKeyID, W0BB0001, W0BPersonID, W0BUnitName, W0BW0110G, W0BAge)
+		    	
+				SELECT
+				     replace(newid(), '-', '') AS KeyID
+				    , row_number() OVER(PARTITION BY _A02.PersonID ORDER BY _A02.DispOrder) AS DispOrder
+				    , 1 AS IsLastRow
+					, A0141A W0BA0141A
+					, _A08.A0801B W0BA0141B
+					, _A08Q.A0801B W0BA0141BQ
+					, A0219 W0BA0219
+					, A0221 W0BA0221
+					, '1' W0BA0284
+					, '9' W0BA0291
+					, (SELECT GWYInnerChange07 FROM Data_Person_GWYINNERCHANGE WHERE PersonID = _A01.PersonID AND GWYInnerChange99 = '02') W0BA0291T
+					, '21' W0BA0292
+					, A0293 W0BA0293
+					, '2' W0BA0293G
+					, A02RKeyID
+					, B0001
+					, _A01.PersonID
+					, dbo.FN_CodeItemIDToName('N', B0001) C_N_B0001
+					, (SELECT GWYInnerChange97 FROM Data_Person_GWYINNERCHANGE WHERE PersonID = _A01.PersonID AND GWYInnerChange99 = '02') W0BW0110G
+					, substring(CONVERT(VARCHAR, datediff(M, A0111, A0291T)/12), 1, 2)  AS Age
+				FROM Data_Person_A02 _A02
+				LEFT JOIN Data_Person_A01 _A01 ON _A01.PersonID = _A02.PersonID
+				LEFT JOIN Data_Person_A08 _A08 ON _A08.PersonID = _A01.PersonID AND _A08.DispOrder = (
+					SELECT max(DispOrder) FROM Data_Person_A08 _A08Q WHERE PersonID = _A01.PersonID
+					AND A0807 = (SELECT MAX(A0807) FROM Data_Person_A08 WHERE PersonID=_A08Q.PersonID AND A0807 < _A02.A0291T))
+				LEFT JOIN Data_Person_A08 _A08Q ON _A01.PersonID = _A08Q.PersonID AND _A08Q.DispOrder = (
+					SELECT MAX(DispOrder) FROM Data_Person_A08 AS b WHERE b.PersonID=_A08Q.PersonID AND b.A0807 =
+						(SELECT MAX(A0807) FROM Data_Person_A08 AS a WHERE a.PersonID=b.PersonID AND A0837='1'))
+				WHERE _A02.DispOrder = (SELECT max(DispOrder) FROM Data_Person_A02 WHERE PersonID = _A01.PersonID )
+				AND _A01.PersonID IN (SELECT PersonID FROM #WHERE_SCOPE_PERSONID)
+			END
+			ELSE
+			BEGIN
+			
+			   	INSERT INTO dbo.Data_DB21_W0B (KeyID, DispOrder, IsLastRow,  
+		    	W0BA0141A, W0BA0141B, W0BA0141BQ, W0BA0219, W0BA0221, W0BA0284, W0BA0291, W0BA0291T, W0BA0292, W0BA0293, 
+		    	W0BA0293G, W0BA02RKeyID, W0BB0001, W0BPersonID, W0BUnitName, W0BW0110G, W0BAge)
+		    	
+				SELECT
+				     replace(newid(), '-', '') AS KeyID
+				    , row_number() OVER(PARTITION BY _A02.PersonID ORDER BY _A02.DispOrder) AS DispOrder
+				    , 1 AS IsLastRow
+					, A0141A
+					, _A08.A0801B
+					, _A08Q.A0801B W0BA0141BQ
+					, A0219
+					, A0221
+					, A0284
+					, A0291
+					, A0291T
+					, A0292
+					, A0293
+					, A0293G
+					, A02RKeyID
+					, B0001
+					, _A01.PersonID
+					, NULL --, dbo.FN_CodeItemIDToName('N', B0001) C_N_B0001
+					, W0110G
+					, substring(CONVERT(VARCHAR, datediff(M, A0111, A0291T)/12), 1, 2)  AS Age
+				FROM Data_Person_A02 _A02
+				LEFT JOIN Data_Person_A01 _A01 ON _A01.PersonID = _A02.PersonID
+				LEFT JOIN Data_Person_A08 _A08 ON _A08.PersonID = _A01.PersonID AND _A08.DispOrder = (
+					SELECT max(DispOrder) FROM Data_Person_A08 _A08Q WHERE PersonID = _A01.PersonID
+					AND A0807 = (SELECT MAX(A0807) FROM Data_Person_A08 WHERE PersonID=_A08Q.PersonID AND A0807 < _A02.A0291T))
+				LEFT JOIN Data_Person_A08 _A08Q ON _A01.PersonID = _A08Q.PersonID AND _A08Q.DispOrder = (
+					SELECT MAX(DispOrder) FROM Data_Person_A08 AS b WHERE b.PersonID=_A08Q.PersonID AND b.A0807 =
+						(SELECT MAX(A0807) FROM Data_Person_A08 AS a WHERE a.PersonID=b.PersonID AND A0837='1'))
+				WHERE _A02.DispOrder = (SELECT max(DispOrder) FROM Data_Person_A02 WHERE PersonID = _A01.PersonID AND A0284 = 1 )
+				AND A0291T >= (SELECT A2907 FROM Data_Person_A29 WHERE PersonID = _A02.PersonID AND IsLastRow = 1)
+				--AND A02RKeyID NOT IN (SELECT W0BA02RKeyID FROM Data_DB21_W0B) --AND A02RKeyID IS NOT NULL 
+				AND (isnull(A0292, -2) = 
+					CASE 
+						 WHEN _A01.PClassID = '00001' AND A0292 = 3 THEN 3
+						 WHEN _A01.PClassID = '00001' AND A0292 = 24 THEN 24
+						 WHEN _A01.PClassID = '00001' THEN -1
+						 ELSE A0292
+					END) 
+				AND _A01.PersonID IN (SELECT PersonID FROM #WHERE_SCOPE_PERSONID)
+			END
 			
 			--SELECT * FROM Data_DB21_W0B WHERE W0BPersonID IN (SELECT PersonID FROM #WHERE_SCOPE_PERSONID)
 		END
@@ -501,6 +664,15 @@ BEGIN
 			AND _A01.PersonID IN (SELECT PersonID FROM #WHERE_SCOPE_PERSONID)
 			
 			--SELECT * FROM Data_DB21_W0C WHERE W0CPersonID IN (SELECT PersonID FROM #WHERE_SCOPE_PERSONID)
+			IF @COUNT > 0
+			BEGIN
+				UPDATE _TZ SET W0CW0110G = (SELECT GWYInnerChange97 FROM Data_Person_GWYINNERCHANGE 
+					WHERE PersonID = _TZ.W0CPersonID AND GWYInnerChange99 = '02')
+				FROM Data_DB21_W0C _TZ, Data_Person_A01 _A01 WHERE _TZ.W0CPersonID = _A01.PersonID
+				AND _TZ.W0CB0001 = _A01.B0001 AND _TZ.W0CPersonID IN (
+					SELECT PersonID FROM Data_Person_GWYINNERCHANGE WHERE _TZ.W0CPersonID = PersonID
+					AND _TZ.W0CGWYZWZJ02 < GWYInnerChange07) 
+			END
 		END
 		
 		PRINT @CHILD

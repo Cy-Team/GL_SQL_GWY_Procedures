@@ -48,7 +48,7 @@ BEGIN
 					    SELECT ',' + ItemID FROM SM_SetItems WHERE SetID = @CHILD FOR XML path('')
 					), 1, 1, '')) + '
 			FROM WF_D_' + @OperID + '_'+ @CHILD +' _TZ
-			LEFT JOIN WF_D_'+ @OperID +'_Main _Main ON _TZ.'+ @CHILD +'PersonID = _Main.SourceKeyID AND _TZ.'+ @CHILD +'B0001 = _Main.B0001
+			LEFT JOIN WF_D_'+ @OperID +'_Main _Main ON _TZ.'+ @CHILD +'PersonID = _Main.SourceKeyID AND _TZ.'+ @CHILD +'B0001 = _Main.B0001 AND _TZ.KeyID = _Main.KeyID
 			WHERE _Main.JobID = '''+ @JobID +''' AND _Main.JobDataID = '+ convert(VARCHAR(4), @JobDataID)
 		
 		EXEC(@SQL)

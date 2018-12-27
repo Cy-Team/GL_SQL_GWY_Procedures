@@ -2,13 +2,12 @@ ALTER PROCEDURE GL_GWYOperPersonTZ_Common(@SETChild VARCHAR(100), @OperID VARCHA
 AS
 BEGIN
 	EXEC GL_GWYPerson_SETRKeyID 'A30, A29, A15, A11, A14, A02, A02G, GWYZWZJ', @OperID, @JobID, @JobDataID
-	---������Ա����SouceKeyID
+
 	DECLARE
 		@CHILD VARCHAR(10) = ''
 		, @COUNT INT = 0
 		, @SQL VARCHAR(8000) = ''
 		, @InnerChangeCount INT = 0
-		, @InnerChangeSql VARCHAR(800) = ''--�����ڲ��䶯���⴦��
 		, @temSql NVARCHAR(800)=''
 		
 	SET @SQL = 
@@ -18,12 +17,8 @@ BEGIN
 
 '
 	EXEC(@SQL)
-	IF(@OperID LIKE 'CDGWYPsnEdit%')
+	IF(@OperID LIKE 'CDGWYPsnEdit%' OR @OperID LIKE 'CDGWYTransferOut')
 	BEGIN
-		SET @InnerChangeSql = 
-'
-			AND _main.KeyID NOT IN (SELECT KeyID FROM WF_D_'+@OperID+'_GWYInnerChange)
-'
 		SET @temSql = 
 '
 			SELECT @InnerChangeCount = count(1) FROM WF_D_'+@OperID+'_GWYInnerChange WHERE KeyID IN 
@@ -70,10 +65,43 @@ BEGIN
 '+'			FROM WF_D_'+@OperID+'_A30 _A30
 '+'			LEFT JOIN WF_D_'+@OperID+'_Main _main ON _A30.KeyID = _main.KeyID
 '+'			LEFT JOIN WF_D_'+@OperID+'_A02 _A02 ON _A02.KeyID = _main.KeyID AND _A02.IsLastRow = 1
-'+'			WHERE _main.JobID = '''+@JobID+''' AND _main.JobDataID = '+ convert(VARCHAR(4), @JobDataID) + '
-'+@InnerChangeSql
+'+'			WHERE _main.JobID = '''+@JobID+''' AND _main.JobDataID = '+ convert(VARCHAR(4), @JobDataID)
+
 			EXEC(@SQL)
 			--PRINT @sql
+			
+		    IF @InnerChangeCount>0
+		    BEGIN
+		    	SET @SQL = 
+'		    	INSERT INTO dbo.WF_D_'+@OperID+'_W02 (KeyID, DispOrder, IsLastRow, W02A0215A, W02A0219, W02A0221, 
+'+'				W02A0284, W02A0291, W02A0292, W02A0293, W02A0293G, W02A3001, W02A3004, W02B0001, W02UnitName, W02W0110G, W02PersonID, W02A30RKeyID)
+'+'				
+'+'				SELECT
+'+'				    _main.KeyID
+'+'				    , (SELECT isnull(max(DispOrder), 0) + 1 FROM WF_D_'+@OperID+'_W02 WHERE KeyID = _main.KeyID) AS DispOrder
+'+'				    , 1 AS IsLastRow
+'+'				    ,GWYInnerChange10
+'+'				    ,GWYInnerChange12
+'+'				    ,GWYInnerChange09
+'+'				    ,null
+'+'				    ,null
+'+'				    ,null
+'+'				    ,null
+'+'				    ,null
+'+'				    ,GWYInnerChange08
+'+'				    ,GWYInnerChange07
+'+'				    ,GWYInnerChange01
+'+'				    ,dbo.FN_CodeItemIDToName(''N'', GWYInnerChange01) C_N_GWYInnerChange01
+'+'				    ,GWYInnerChange97
+'+'				    ,SourceKeyID
+'+'				    ,replace(newid(), ''-'', '''') AS RKeyID
+'+'				FROM WF_D_'+@OperID+'_GWYInnerChange _change
+'+'				LEFT JOIN WF_D_'+@OperID+'_Main _main ON _change.KeyID = _main.KeyID
+'+'				WHERE _main.JobID = '''+@JobID+''' AND _main.JobDataID = '+ convert(VARCHAR(4), @JobDataID) + ' AND GWYInnerChange99 = ''02''
+' 
+				EXEC(@SQL)
+				PRINT @sql
+			END
 	    END
 	    
 	    IF @CHILD = 'W03'
@@ -101,73 +129,38 @@ BEGIN
 '+'			FROM WF_D_'+@OperID+'_A29 _A29
 '+'			LEFT JOIN WF_D_'+@OperID+'_Main _main ON _A29.KeyID = _main.KeyID
 '+'			LEFT JOIN WF_D_'+@OperID+'_A02 _A02 ON _A02.KeyID = _main.KeyID AND _A02.IsLastRow = 1
-'+'			WHERE _main.JobID = '''+@JobID+''' AND _main.JobDataID = '+ convert(VARCHAR(4), @JobDataID) +'
-'+@InnerChangeSql			
+'+'			WHERE _main.JobID = '''+@JobID+''' AND _main.JobDataID = '+ convert(VARCHAR(4), @JobDataID)
+		
 			EXEC(@SQL)
 			--PRINT @sql
-	    END
-	    
-	    IF @InnerChangeCount>0
-	    BEGIN
-	    	SET @SQL = 
-'	    	DELETE FROM WF_D_'+@OperID+'_W02 WHERE KeyID IN (SELECT KeyID FROM WF_D_'+@OperID+'_Main WHERE JobID = '''+@JobID+''' AND JobDataID = '+ convert(VARCHAR(4), @JobDataID) +')
-'+'			AND KeyID IN (SELECT KeyID FROM WF_D_'+@OperID+'_GWYInnerChange)
-'+'
-
-'+'	    	INSERT INTO dbo.WF_D_'+@OperID+'_W02 (KeyID, DispOrder, IsLastRow, W02A0215A, W02A0219, W02A0221, 
-'+'			W02A0284, W02A0291, W02A0292, W02A0293, W02A0293G, W02A3001, W02A3004, W02B0001, W02UnitName, W02W0110G, W02PersonID, W02A30RKeyID)
-'+'			
-'+'			SELECT
-'+'			    _main.KeyID
-'+'			    , row_number() OVER(PARTITION BY _change.KeyID ORDER BY _change.DispOrder) AS DispOrder
-'+'			    , 1 AS IsLastRow
-'+'			    ,GWYInnerChange10
-'+'			    ,GWYInnerChange12
-'+'			    ,GWYInnerChange09
-'+'			    ,null
-'+'			    ,null
-'+'			    ,null
-'+'			    ,null
-'+'			    ,null
-'+'			    ,GWYInnerChange08
-'+'			    ,GWYInnerChange07
-'+'			    ,GWYInnerChange01
-'+'			    ,dbo.FN_CodeItemIDToName(''N'', GWYInnerChange01) C_N_GWYInnerChange01
-'+'			    ,GWYInnerChange97
-'+'			    ,SourceKeyID
-'+'			    ,replace(newid(), ''-'', '''') AS RKeyID
-'+'			FROM WF_D_'+@OperID+'_GWYInnerChange _change
-'+'			LEFT JOIN WF_D_'+@OperID+'_Main _main ON _change.KeyID = _main.KeyID
-'+'			WHERE _main.JobID = '''+@JobID+''' AND _main.JobDataID = '+ convert(VARCHAR(4), @JobDataID) + ' AND GWYInnerChange99 = ''02''
-'+'			AND _main.KeyID IN (SELECT KeyID FROM WF_D_'+@OperID+'_GWYInnerChange WHERE KeyID = _main.KeyID)
-
-'+'		    DELETE FROM WF_D_'+@OperID+'_W03 WHERE KeyID IN (SELECT KeyID FROM WF_D_'+@OperID+'_Main WHERE JobID = '''+@JobID+''' AND JobDataID = '+ convert(VARCHAR(4), @JobDataID) +')
-'+'			AND KeyID IN (SELECT KeyID FROM WF_D_'+@OperID+'_GWYInnerChange)
-'+'		
-'+'	    	INSERT INTO dbo.WF_D_'+@OperID+'_W03 (KeyID, DispOrder, IsLastRow, W03A0215A, W03A0219, W03A0221, 
-'+'			W03A2907, W03A2911, W03B0001, W03UnitName, W03W0110G, W03PersonID, W03A29RKeyID)
-'+'			
-'+'			SELECT			    
-'+'			     _main.KeyID
-'+'			    , row_number() OVER(PARTITION BY _change.KeyID ORDER BY _change.DispOrder) AS DispOrder
-'+'			    , 1 AS IsLastRow
-'+'			    ,GWYInnerChange06
-'+'			    ,GWYInnerChange11
-'+'			    ,GWYInnerChange05
-'+'			    ,GWYInnerChange03
-'+'			    ,GWYInnerChange04
-'+'			    ,GWYInnerChange01
-'+'			    ,dbo.FN_CodeItemIDToName(''N'', GWYInnerChange01) C_N_GWYInnerChange01
-'+'			    ,GWYInnerChange97
-'+'			    ,SourceKeyID
-'+'			    ,replace(newid(), ''-'', '''') AS RKeyID
-'+'			FROM WF_D_'+@OperID+'_GWYInnerChange _change
-'+'			LEFT JOIN WF_D_'+@OperID+'_Main _main ON _change.KeyID = _main.KeyID
-'+'			WHERE _main.JobID = '''+@JobID+''' AND _main.JobDataID = '+ convert(VARCHAR(4), @JobDataID) + ' AND GWYInnerChange99 = ''01''
-'+'			AND _main.KeyID IN (SELECT KeyID FROM WF_D_'+@OperID+'_GWYInnerChange WHERE KeyID = _main.KeyID)
-'
-			EXEC(@SQL)
-			--PRINT @sql
+			
+		    IF @InnerChangeCount>0
+		    BEGIN
+		    	SET @SQL = 
+'		    	INSERT INTO dbo.WF_D_'+@OperID+'_W03 (KeyID, DispOrder, IsLastRow, W03A0215A, W03A0219, W03A0221, 
+'+'				W03A2907, W03A2911, W03B0001, W03UnitName, W03W0110G, W03PersonID, W03A29RKeyID)
+'+'				
+'+'				SELECT			    
+'+'				     _main.KeyID
+'+'				    , (SELECT isnull(max(DispOrder), 0) + 1 FROM WF_D_'+@OperID+'_W03 WHERE KeyID = _main.KeyID) AS DispOrder
+'+'				    , 1 AS IsLastRow
+'+'				    ,GWYInnerChange06
+'+'				    ,GWYInnerChange11
+'+'				    ,GWYInnerChange05
+'+'				    ,GWYInnerChange03
+'+'				    ,GWYInnerChange04
+'+'				    ,GWYInnerChange01
+'+'				    ,dbo.FN_CodeItemIDToName(''N'', GWYInnerChange01) C_N_GWYInnerChange01
+'+'				    ,GWYInnerChange97
+'+'				    ,SourceKeyID
+'+'				    ,replace(newid(), ''-'', '''') AS RKeyID
+'+'				FROM WF_D_'+@OperID+'_GWYInnerChange _change
+'+'				LEFT JOIN WF_D_'+@OperID+'_Main _main ON _change.KeyID = _main.KeyID
+'+'				WHERE _main.JobID = '''+@JobID+''' AND _main.JobDataID = '+ convert(VARCHAR(4), @JobDataID) + ' AND GWYInnerChange99 = ''01''
+'	
+				EXEC(@SQL)
+				PRINT @sql
+			END
 	    END
 	    
 	    IF @CHILD = 'W04'
@@ -565,10 +558,9 @@ BEGIN
 '+'			AND _GWYZWZJ.DispOrder = (SELECT max(DispOrder) FROM WF_D_'+@OperID+'_GWYZWZJ WHERE KeyID = _main.KeyID AND GWYZWZJ09 IN (''26'', ''27'') AND GWYZWZJ01 LIKE ''1%'')
 '+'			AND GWYZWZJ02T >= (SELECT A2907 FROM WF_D_'+@OperID+'_A29 WHERE KeyID = _main.KeyID AND IsLastRow = 1)'
 	    	EXEC(@SQL)
-			--PRINT @SQL
+			PRINT @SQL
 	    END
-	    
-	    --�������⴦��			
+	    			
 		IF @InnerChangeCount>0 AND (SELECT COUNT(1) FROM dbo.Get_StringSplit('W04, W05, W06, W07, W08, W09, W0A, W0C', ',') WHERE ch = @CHILD) > 0
     	BEGIN
     		
